@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dtree tags · Atendimento Facio</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --panel:#f7f6f3;
+    --panel-border:#e9e9e7;
+    --text:#37352f;
+    --muted:#9b9a97;
+    --accent:#2383e2;
+    --accent-hover:#1a6fc4;
+    --tag-bg:#e7f3fe;
+    --tag-border:#b4d9f7;
+    --tag-label:#2383e2;
+    --link:#2383e2;
+    --danger:#eb5757;
+    --input-bg:#ffffff;
+    --shadow:0 1px 2px rgba(0,0,0,.04);
+    --success:#1a7f4f;
+    --success-bg:#e7f6ee;
+    --success-border:#1a7f4f;
+  }
+  html[data-theme="dark"]{
+    --bg:#191919;
+    --panel:#2f2f2f;
+    --panel-border:#3f3f3f;
+    --text:#e9e9e7;
+    --muted:#9b9a97;
+    --accent:#5b9df9;
+    --accent-hover:#3d84e0;
+    --tag-bg:#20364d;
+    --tag-border:#3a6a9c;
+    --tag-label:#7fb2ff;
+    --link:#7fb2ff;
+    --danger:#ff7369;
+    --input-bg:#252525;
+    --shadow:none;
+    --success:#3ddc84;
+    --success-bg:#0f2a1c;
+    --success-border:#22c55e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:32px 20px 60px;
+    transition:background .2s ease,color .2s ease;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  h1{font-size:28px;font-weight:800;margin:0 0 18px;letter-spacing:-0.01em;}
+  .meta .title{font-weight:700;font-size:14px;}
+  .meta .subtitle{color:var(--muted);font-size:13px;margin-top:2px;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
+  .top-right{display:flex;gap:8px;align-items:center;}
+  .icon-btn{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    color:var(--text);
+    border-radius:8px;
+    width:36px;height:36px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:16px;
+    box-shadow:var(--shadow);
+  }
+  .icon-btn:hover{border-color:var(--accent);}
+  .mode-btn{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    color:var(--text);
+    border-radius:8px;
+    padding:8px 14px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+  }
+  .mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .icon-btn.active{background:var(--accent);border-color:var(--accent);}
+  hr{border:none;border-top:1px solid var(--panel-border);margin:14px 0 20px;}
+  input[type=text], textarea, select{
+    width:100%;
+    background:var(--input-bg);
+    border:1px solid var(--panel-border);
+    border-radius:10px;
+    padding:11px 13px;
+    color:var(--text);
+    font-size:14px;
+    font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:60px;}
+  input[type=text]::placeholder, textarea::placeholder{color:var(--muted);}
+  #search{margin-bottom:16px;}
+  .breadcrumb{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;}
+  .breadcrumb .crumb{color:var(--link);}
+  .breadcrumb .sep{margin:0 6px;color:var(--panel-border);}
+  .breadcrumb .current{color:var(--text);}
+  .qbox{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:12px;
+    padding:16px 18px;
+    font-weight:600;
+    font-size:15px;
+    margin-bottom:12px;
+    box-shadow:var(--shadow);
+  }
+  .options{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-bottom:22px;}
+  .opt-btn{
+    background:transparent;
+    border:1.5px solid var(--accent);
+    color:var(--accent);
+    border-radius:999px;
+    padding:9px 16px;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .opt-btn:hover, .opt-btn:focus-visible{background:var(--accent);color:#fff;}
+  .answer-chip{
+    background:var(--accent);
+    color:white;
+    border-radius:999px;
+    padding:9px 16px;
+    font-size:13.5px;
+    font-weight:600;
+    display:inline-block;
+  }
+  .chip-row{display:flex;justify-content:flex-end;margin-bottom:22px;}
+  .result{
+    background:var(--success-bg);
+    border:2px solid var(--success-border);
+    border-left:6px solid var(--success-border);
+    border-radius:12px;
+    padding:20px 22px;
+    margin-bottom:20px;
+    box-shadow:0 4px 18px rgba(34,197,94,.15);
+  }
+  .result .label{
+    font-size:11px;font-weight:800;letter-spacing:.08em;color:#fff;
+    background:var(--success);border-radius:6px;padding:4px 10px;
+    display:inline-block;margin-bottom:12px;
+  }
+  .result .tagname{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:22px;font-weight:800;margin-bottom:8px;
+    display:flex;align-items:center;gap:8px;
+    color:var(--success);
+  }
+  .result .desc{font-size:14.5px;line-height:1.55;}
+  .result .example{
+    margin-top:10px;font-size:13.5px;line-height:1.5;font-style:italic;color:var(--text);
+  }
+  .result .example-label{
+    font-style:normal;font-weight:700;font-size:11px;text-transform:uppercase;
+    letter-spacing:.04em;color:var(--muted);margin-right:4px;
+  }
+  .result .saiba-mais{margin-top:10px;}
+  .result .saiba-mais a{
+    color:var(--success);font-size:13.5px;font-weight:600;text-decoration:none;
+  }
+  .result .saiba-mais a:hover{text-decoration:underline;}
+  .result .note{
+    margin-top:12px;font-size:12.5px;color:var(--muted);
+    border-top:1px solid var(--panel-border);padding-top:8px;
+  }
+  .controls{display:flex;gap:10px;justify-content:flex-end;margin-bottom:10px;flex-wrap:wrap;}
+  .ctrl-btn{
+    background:transparent;border:1px solid var(--panel-border);color:var(--text);
+    border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;
+  }
+  .ctrl-btn:hover{border-color:var(--accent);}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;}
+  .search-results{
+    background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;
+    margin-top:-8px;margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow);
+  }
+  .search-results .sr-item{
+    padding:10px 14px;font-size:13px;border-top:1px solid var(--panel-border);
+    cursor:pointer;display:flex;justify-content:space-between;gap:10px;
+  }
+  .search-results .sr-item:first-child{border-top:none;}
+  .search-results .sr-item:hover{background:var(--tag-bg);}
+  .search-results .sr-tag{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--link);white-space:nowrap;}
+  .search-results .sr-desc{color:var(--muted);text-align:right;}
+
+  /* ---------- EDITOR ---------- */
+  .editor{
+    background:var(--panel);
+    border:1px dashed var(--accent);
+    border-radius:12px;
+    padding:16px 18px;
+    margin-bottom:20px;
+  }
+  .editor h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;}
+  .opt-row{
+    display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;
+    background:var(--bg);border:1px solid var(--panel-border);border-radius:10px;padding:10px;
+  }
+  .opt-row .opt-fields{flex:1;display:flex;flex-direction:column;gap:6px;}
+  .opt-leaf-fields{
+    display:flex;flex-direction:column;gap:4px;margin-top:4px;padding-top:8px;
+    border-top:1px dashed var(--panel-border);
+  }
+  .opt-leaf-label{font-size:11px;color:var(--muted);font-weight:600;}
+  .opt-leaf-tag, .opt-leaf-desc{
+    background:var(--input-bg);border:1px solid var(--panel-border);border-radius:8px;
+    padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit;
+  }
+  .opt-leaf-tag{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .opt-leaf-desc{resize:vertical;}
+  .opt-row .remove-opt{
+    background:transparent;border:1px solid var(--panel-border);color:var(--danger);
+    border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;height:38px;
+  }
+  .editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+  .btn-primary{
+    background:var(--accent);color:#fff;border:none;border-radius:8px;
+    padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .btn-secondary{
+    background:transparent;color:var(--text);border:1px solid var(--panel-border);
+    border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;
+  }
+  .btn-danger{
+    background:transparent;color:var(--danger);border:1px solid var(--danger);
+    border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;
+  }
+  .small-hint{font-size:12px;color:var(--muted);margin-top:4px;}
+  .data-io{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  #importFile{display:none;}
+  .save-indicator{font-size:12px;color:var(--muted);margin-top:8px;text-align:right;}
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+    align-items:center;justify-content:center;z-index:9999;padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--panel);border:1px solid var(--panel-border);border-radius:12px;
+    padding:20px;max-width:380px;width:100%;box-shadow:0 8px 30px rgba(0,0,0,.25);
+  }
+  .modal-box p{margin:0 0 18px;font-size:14px;line-height:1.5;color:var(--text);}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="meta">
+      <div class="subtitle" id="lastUpdated"></div>
+    </div>
+    <button class="icon-btn" id="editModeBtn" title="Modo de edição">✏️</button>
+  </div>
+
+  <hr>
+
+  <div class="data-io" id="dataIo" style="display:none;">
+    <button class="ctrl-btn" id="exportBtn">⭳ Exportar dados (JSON)</button>
+    <button class="ctrl-btn" id="importBtn">⭱ Importar dados (JSON)</button>
+    <input type="file" id="importFile" accept="application/json">
+    <button class="ctrl-btn" id="resetBtn">↺ Restaurar versão original</button>
+  </div>
+
+  <input type="text" id="search" placeholder="Buscar por palavra-chave (ex: exclusão, CCB, cobrança indevida, fraude)...">
+  <div id="searchResults"></div>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <div id="history"></div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="backBtn">← Voltar uma etapa</button>
+    <button class="ctrl-btn" id="restartBtn">↺ Recomeçar</button>
+  </div>
+  <div class="save-indicator" id="saveIndicator"></div>
+
+</div>
+
+<div id="modalOverlay" class="modal-overlay">
+  <div class="modal-box">
+    <p id="modalMessage"></p>
+    <div class="modal-actions">
+      <button id="modalCancelBtn" class="btn-secondary">Cancelar</button>
+      <button id="modalConfirmBtn" class="btn-primary">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   DADOS PADRÃO — árvore de decisão de tags (25/06/2026)
+   Cada nó é: {type:"question", question, options:[{label,next}]}
+           ou {type:"leaf", tag, desc, keywords}
+--------------------------------------------------------- */
+const DEFAULT_NODES = {
+  root: { type:"question", question:"Qual é o motivo do contato?", options:[
+    { label:"Cadastro", next:"cadastro_root" },
+    { label:"Bloqueio", next:"bloqueio_root" },
+    { label:"Como a Facio recebe dinheiro do cliente", next:"recebe_root" },
+    { label:"Como a Facio envia dinheiro para o cliente", next:"envia_root" },
+    { label:"Gestão de Segurança", next:"seguranca_root" },
+    { label:"Produtos", next:"produtos_root" },
+  ]},
+
+  cadastro_root: { type:"question", question:"Cadastro — qual é o assunto?", options:[
+    { label:"Exclusão de cadastro / encerramento de conta", next:"exclusao" },
+    { label:"Validação de documentos", next:"validacao_documentos" },
+    { label:"Abertura/validação da conta QI Tech", next:"abertura_conta_qi" },
+    { label:"Assinatura de contrato (CCB)", next:"assinatura_ccb_root" },
+    { label:"Troca da conta bancária cadastrada", next:"troca_de_conta" },
+    { label:"Banco não permitido no cadastro", next:"banco_nao_aceito" },
+    { label:"Dúvidas/dificuldades no App", next:"apoio_app" },
+    { label:"Autorização/validação do Pix", next:"pix_autorizacao" },
+    { label:"Taxas e encargos — Crédito Fácil", next:"CRF_taxas" },
+    { label:"Aumento de limite / nova antecipação — Crédito Fácil", next:"CRF_limites" },
+    { label:"Pré-contratação Crédito Fácil", next:"CRF_pre_contratacao" },
+    { label:"Como funciona — Crédito do Trabalhador", next:"CT_Como_funciona" },
+    { label:"Dúvidas gerais — Antecipação de Salário", next:"ant_duvidas" },
+  ]},
+
+  assinatura_ccb_root: { type:"question", question:"Assinatura de contrato (CCB) — qual produto?", options:[
+    { label:"Crédito Fácil", next:"assinatura_CCB" },
+    { label:"Crédito do Trabalhador", next:"CT_assinatura_CCB" },
+  ]},
+
+  bloqueio_root: { type:"question", question:"Bloqueio — qual é o motivo da reprovação?", options:[
+    { label:"Reprovado por renda / ausência de salário", next:"reprovado_renda" },
+    { label:"Cliente questiona o motivo da reprovação (modelo)", next:"reprovado_modelo" },
+    { label:"Bloqueado por atraso no pagamento", next:"reprovado_atraso" },
+    { label:"Abertura de conta QI Tech rejeitada", next:"reprovado_qi" },
+    { label:"Reprovação — Crédito do Trabalhador", next:"CT_reprovado_modelo" },
+  ]},
+
+  recebe_root: { type:"question", question:"Como a Facio recebe dinheiro do cliente — qual é o assunto?", options:[
+    { label:"Questiona valor cobrado (parcial ou integral)", next:"cobranca_info" },
+    { label:"Cobrança com exceção para devolução", next:"cobranca_excecao" },
+    { label:"Cancelamento em até 7 dias", next:"arrependimento_7d" },
+    { label:"Arrependimento após 7 dias", next:"arrependimento_depois_7d" },
+    { label:"Reembolso (desconto indevido / duplicidade)", next:"reembolso" },
+    { label:"Dúvidas sobre dívida em atraso — Crédito Fácil", next:"CRF_divida" },
+    { label:"Antecipar/quitar parcela — Crédito do Trabalhador", next:"CT_pagamento_antecipado" },
+    { label:"Parcela em atraso — Crédito do Trabalhador", next:"CT_parcela_atraso" },
+    { label:"Formas de pagamento da antecipação", next:"ant_duvidas_pagamento" },
+    { label:"Cliente inadimplente — Antecipação", next:"ant_duvidas_inadimplencia" },
+  ]},
+
+  envia_root: { type:"question", question:"Como a Facio envia dinheiro para o cliente — qual é o assunto?", options:[
+    { label:"Estorno", next:"estorno" },
+    { label:"Pix avulso para conta QI Tech", next:"pix_avulso" },
+    { label:"Prazo de depósito — Crédito Fácil", next:"CRF_deposito_prazo" },
+    { label:"Antecipar/quitar — Crédito Fácil", next:"CRF_pagamento_antecipado" },
+    { label:"Renegociação com desconto — Crédito do Trabalhador", next:"CRF_renegociacao" },
+    { label:"Valor desembolsado — Crédito do Trabalhador", next:"CT_desembolso" },
+    { label:"Cancelamento manual — Crédito do Trabalhador", next:"CT_Cancelamento" },
+    { label:"Cobrança indevida — Crédito do Trabalhador", next:"CT_cobranca_indevida" },
+    { label:"Depósito da antecipação (prazo/falha)", next:"ant_duvidas_deposito" },
+  ]},
+
+  seguranca_root: { type:"question", question:"Gestão de Segurança — qual é o caso?", options:[
+    { label:"Fraude confirmada", next:"fraude_confirmada" },
+    { label:"Suspeita de fraude", next:"suspeita_fraude" },
+  ]},
+
+  produtos_root: { type:"question", question:"Produtos — qual é o assunto?", options:[
+    { label:"Encerrado por inatividade (sem retorno do cliente)", next:"inatividade" },
+    { label:"Cliente via Reclame Aqui / Consumidor.gov", next:"canais_criticos" },
+    { label:"Programa de indicação", next:"indicacao" },
+    { label:"Cliente menciona outra instituição financeira", next:"concorrentes" },
+    { label:"Campanha promocional ou teste interno", next:"campanhas" },
+  ]},
+
+  /* -------- folhas (tags finais) -------- */
+
+  /* Cadastro */
+  exclusao:              { type:"leaf", tag:"exclusão",              desc:"Solicitação de exclusão de cadastro. Utilizar quando o usuário solicitar a exclusão do cadastro ou encerramento da conta QITech.", keywords:"cancelar conta apagar dados excluir encerramento", example:"", link:"" },
+  validacao_documentos:  { type:"leaf", tag:"validacao_documentos",  desc:"Validação de documentos. Quando houver validação pela CAF ou manual em casos de suspeita de fraude.", keywords:"caf documentos validação manual", example:"", link:"" },
+  abertura_conta_qi:     { type:"leaf", tag:"abertura_conta_qi",     desc:"Abertura/validação conta QI Tech. Quando o usuário tiver dúvidas sobre abertura de conta ou quando está com a conta pendente.", keywords:"qi tech conta pendente abertura", example:"", link:"" },
+  assinatura_CCB:        { type:"leaf", tag:"assinatura_CCB_CF",        desc:"Assinatura de contrato. Quando o usuário tiver dúvidas sobre a CCB, contrato, aceite digital ou não conseguir concluir a assinatura.", keywords:"ccb contrato aceite digital assinar", example:"", link:"" },
+  troca_de_conta:        { type:"leaf", tag:"troca_de_conta",        desc:"Alteração de conta bancária. Quando o cliente solicitar troca da conta cadastrada para recebimento do valor.", keywords:"troca conta bancária recebimento", example:"", link:"" },
+  banco_nao_aceito:      { type:"leaf", tag:"banco_nao_aceito",      desc:"Banco não permitido. Quando o usuário quiser cadastrar um banco não aceito.", keywords:"banco não permitido cadastrar", example:"", link:"" },
+  apoio_app:             { type:"leaf", tag:"apoio_app",             desc:"Suporte ao aplicativo. Quando o usuário tiver dúvidas ou dificuldades para usar o App.", keywords:"app aplicativo suporte dificuldade", example:"", link:"" },
+  pix_autorizacao:       { type:"leaf", tag:"pix_autorizacao",       desc:"Autorização/validação Pix. Quando houver dúvidas relacionadas à abertura de conta QI Tech ou dificuldades no momento da autorização do Pix Inteligente.", keywords:"pix inteligente autorização qi tech", example:"\"Não consigo passar da etapa de autorização do Pix Inteligente.\" / \"Como faço para autorizar? Por que preciso abrir essa conta?\"", link:"" },
+  CRF_taxas:             { type:"leaf", tag:"taxas_CRF",             desc:"Taxas e encargos. Quando o usuário questionar juros, encargos ou composição de taxas.", keywords:"juros encargos taxas composição", example:"", link:"" },
+  CRF_limites:           { type:"leaf", tag:"limites_CRF",           desc:"Solicitação de aumento de limite ou nova antecipação. Dúvidas sobre aumento de limite, consulta, funcionamento do limite ou contratação de um novo crédito.", keywords:"aumentar limite novo crédito consulta", example:"", link:"" },
+  CRF_pre_contratacao:   { type:"leaf", tag:"pre_contratacao_CRF",   desc:"Pré-contratação Crédito Fácil. Quando o usuário quiser entender etapas antes da contratação.", keywords:"pré contratação etapas crédito fácil", example:"", link:"" },
+  CT_assinatura_CCB:     { type:"leaf", tag:"assinatura_CCB_CT",     desc:"Assinatura contrato Crédito do Trabalhador. Quando houver dúvidas ou dificuldades na assinatura da CCB.", keywords:"ccb consignado assinatura", example:"", link:"" },
+  CT_Como_funciona:      { type:"leaf", tag:"Como_funciona_CT",      desc:"Funcionamento do produto. Dúvidas gerais sobre contratação, pagamento, simulação e funcionamento.", keywords:"simulação contratação como funciona", example:"\"Quero fazer uma simulação de empréstimo consignado.\"", link:"" },
+  ant_duvidas:           { type:"leaf", tag:"duvidas_ant",           desc:"Dúvidas antecipação. Dúvidas gerais sobre Antecipação de Salário, funcionamento, contratação, prazo ou utilização.", keywords:"antecipação salário duvida geral", example:"", link:"" },
+
+  /* Bloqueio */
+  reprovado_renda:       { type:"leaf", tag:"reprovado_renda",       desc:"Reprovação por renda. Quando o usuário estiver bloqueado por ausência de salário/análise de renda.", keywords:"renda salário bloqueado análise", example:"", link:"" },
+  reprovado_modelo:      { type:"leaf", tag:"reprovado_modelo",      desc:"Reprovação por modelo. Quando o cliente questionar resultado da análise ou motivo da reprovação.", keywords:"reprovado modelo motivo análise", example:"", link:"" },
+  reprovado_atraso:      { type:"leaf", tag:"reprovado_atraso",      desc:"Reprovação por atraso. Quando houver bloqueio devido a atraso no pagamento.", keywords:"atraso bloqueio pagamento", example:"", link:"" },
+  reprovado_qi:          { type:"leaf", tag:"reprovado_qi",          desc:"Reprovação na abertura da conta QI Tech. Quando a abertura de conta for rejeitada pela QI Tech.", keywords:"qi tech rejeitada conta", example:"", link:"" },
+  CT_reprovado_modelo:   { type:"leaf", tag:"reprovado_modelo_CT",   desc:"Reprovação Crédito do Trabalhador. Quando o cliente já souber que foi reprovado por modelo ou sem elegibilidade para a contratação do produto.", keywords:"reprovado elegibilidade consignado", example:"\"Por que fui negado?\" / \"Vi que não foi aprovado, por quê?\"", link:"" },
+
+  /* Como a Facio recebe dinheiro do cliente */
+  cobranca_info:         { type:"leaf", tag:"cobrança_info",         desc:"Informações de cobrança por nossos meios de pagamento. Quando o cliente questionar valores cobrados parcial ou integralmente.", keywords:"cobrança valor pagamento", example:"", link:"" },
+  cobranca_excecao:      { type:"leaf", tag:"cobrança_excecao",      desc:"Cobrança com exceção para devolução de valores. Utilizar quando o cliente teve uma cobrança realizada e, após análise do caso, será aberta uma exceção para devolução do valor devido a um cenário sensível, erro operacional ou situação fora do padrão.", keywords:"exceção devolução erro operacional", example:"", link:"" },
+  arrependimento_7d:     { type:"leaf", tag:"arrependimento_7d",     desc:"Cancelamento em até 7 dias. Quando o cliente solicitar devolução dentro do prazo legal.", keywords:"7 dias arrependimento prazo legal devolução", example:"", link:"" },
+  arrependimento_depois_7d: { type:"leaf", tag:"arrependimento_depois_7d", desc:"Arrependimento após 7 dias. Quando o cliente solicita devolução após o prazo legal pelo App do banco e deseja a baixa da pendência no App da Facio.", keywords:"depois 7 dias baixa pendência", example:"", link:"" },
+  reembolso:             { type:"leaf", tag:"reembolso",             desc:"Reembolso de valores. Utilizar quando o cliente sofrer um desconto indevido, cobrança incorreta ou pagamento em duplicidade e for necessário realizar devolução de valores.", keywords:"desconto indevido duplicidade devolução", example:"", link:"" },
+  CRF_divida:            { type:"leaf", tag:"divida_CRF",            desc:"Dúvidas sobre dívidas em atraso. Quando o cliente deseja consultar informações sobre a dívida em aberto, como valores, vencimentos ou situação do débito.", keywords:"dívida em atraso vencimento crédito fácil", example:"", link:"" },
+  CT_pagamento_antecipado: { type:"leaf", tag:"pagamento_antecipado_CT", desc:"Antecipação/quitação. Quando desejar quitar parcialmente ou integralmente o consignado.", keywords:"quitar antecipar parcela consignado", example:"\"Quero quitar meu consignado.\" / \"Tem como pagar antes?\"", link:"" },
+  CT_parcela_atraso:     { type:"leaf", tag:"parcela_atraso_CT",     desc:"Parcela em atraso no consignado. Quando houver parcela vencida e o cliente quiser pagar.", keywords:"parcela vencida atraso consignado", example:"", link:"" },
+  ant_duvidas_pagamento: { type:"leaf", tag:"duvidas_pagamento_ant", desc:"Informações gerais referente ao pagamento. Dúvidas sobre formas de pagamento da antecipação ou demais assuntos sobre o pagamento.", keywords:"formas de pagamento antecipação", example:"", link:"" },
+  ant_duvidas_inadimplencia: { type:"leaf", tag:"duvidas_inadimplencia_ant", desc:"Clientes inadimplentes. Dúvidas sobre atraso, dívida ou renegociação.", keywords:"inadimplente atraso renegociação", example:"", link:"" },
+
+  /* Como a Facio envia dinheiro para o cliente */
+  estorno:               { type:"leaf", tag:"estorno",               desc:"Estorno. Descrição e critério de uso não detalhados no material recebido — sinalizar ao gestor para complementar.", keywords:"estorno devolução", example:"", link:"" },
+  pix_avulso:            { type:"leaf", tag:"pix_avulso",            desc:"Pix avulso QI Tech. Quando houver envio manual de Pix para conta QI Tech ou necessidade de orientação sobre esse pagamento.", keywords:"pix avulso manual qi tech", example:"", link:"" },
+  CRF_deposito_prazo:    { type:"leaf", tag:"deposito_prazo_CRF",    desc:"Prazo depósito. Quando o cliente quiser saber prazo do depósito ou informar que o valor ainda não caiu em sua conta.", keywords:"prazo depósito não caiu crédito fácil", example:"", link:"" },
+  CRF_pagamento_antecipado: { type:"leaf", tag:"pagamento_antecipado_CRF", desc:"Antecipação/quitação. Quando desejar quitar parcialmente ou antecipadamente o Crédito Fácil.", keywords:"quitar antecipar crédito fácil", example:"", link:"" },
+  CRF_renegociacao:      { type:"leaf", tag:"renegociacao_CT",      desc:"Renegociação com desconto. Quando houver interesse em renegociar dívida com desconto.", keywords:"renegociar desconto dívida", example:"", link:"" },
+  CT_desembolso:         { type:"leaf", tag:"desembolso_CT",         desc:"Valor desembolsado. Informações sobre depósito, liberação e valores do contrato.", keywords:"desembolso liberação depósito consignado", example:"", link:"" },
+  CT_Cancelamento:       { type:"leaf", tag:"Cancelamento_CT",       desc:"Cancelamento manual. Quando for necessário cancelamento manual do contrato por inconsistência, divergência de dados ou erro operacional.", keywords:"cancelamento manual divergência erro", example:"", link:"" },
+  CT_cobranca_indevida:  { type:"leaf", tag:"Cobrança_indevida_CT",  desc:"Cobrança indevida. Quando houver cobrança após pagamento, desconto duplicado ou contrato já quitado.", keywords:"cobrança indevida duplicado quitado", example:"\"Fui cobrado sem receber nada.\"", link:"" },
+  ant_duvidas_deposito:  { type:"leaf", tag:"duvidas_deposito_ant",  desc:"Depósito antecipação. Dúvidas sobre depósito da antecipação, prazo, falha no recebimento.", keywords:"depósito antecipação falha prazo", example:"", link:"" },
+
+  /* Gestão de Segurança */
+  fraude_confirmada:     { type:"leaf", tag:"fraude_confirmada",     desc:"Fraude. Utilizar apenas quando houver confirmação de fraude em sistema, tarja vermelha/preta ou validação interna confirmada.", keywords:"fraude confirmada tarja vermelha preta", example:"", link:"" },
+  suspeita_fraude:       { type:"leaf", tag:"suspeita_fraude",       desc:"Suspeita de fraude. Quando houver comportamento suspeito, inconsistência de dados, indícios de fraude ou necessidade de validação.", keywords:"suspeita comportamento inconsistência", example:"", link:"" },
+
+  /* Produtos */
+  inatividade:           { type:"leaf", tag:"inatividade",           desc:"Encerramento por inatividade. Quando o atendimento for encerrado sem retorno do cliente e sem identificação da demanda.", keywords:"sem retorno encerrado inatividade", example:"", link:"" },
+  canais_criticos:       { type:"leaf", tag:"canais_criticos",       desc:"Canal crítico. Clientes vindos do Reclame Aqui, Consumidor.gov ou canais com potencial de escalonamento.", keywords:"reclame aqui consumidor gov escalonamento", example:"", link:"" },
+  indicacao:             { type:"leaf", tag:"indicacao",             desc:"Programa de indicação. Dúvidas, falhas, não recebimento ou regras do programa de indicação.", keywords:"indicação programa recompensa", example:"", link:"" },
+  concorrentes:          { type:"leaf", tag:"concorrentes",          desc:"Outras instituições. Quando o cliente mencionar taxas, limites, propostas de outras instituições financeiras ou se enganar com o contrato pensando que se trata da Facio.", keywords:"concorrente outra instituição confusão", example:"", link:"" },
+  campanhas:             { type:"leaf", tag:"campanhas",             desc:"Campanhas e teste. Casos relacionados a campanhas temporárias, ações promocionais ou testes internos da operação.", keywords:"campanha promoção teste interno", example:"", link:"" },
+};
+
+/* ---------------------------------------------------------
+   ARMAZENAMENTO (com fallback seguro se localStorage falhar)
+--------------------------------------------------------- */
+const STORAGE_KEY = "dtree_tags_nodes_v1";
+const LAST_UPDATED_KEY = "dtree_tags_last_updated";
+/* Se editar este arquivo direto no código (fora do Modo de edição),
+   atualize a linha abaixo manualmente para refletir a data da alteração. */
+const DEFAULT_LAST_UPDATED = "06/07/2026";
+let memoryStore = {};
+
+function storageGet(key){
+  try { const v = localStorage.getItem(key); return v; }
+  catch(e){ return memoryStore[key] || null; }
+}
+function storageSet(key, value){
+  try { localStorage.setItem(key, value); }
+  catch(e){ memoryStore[key] = value; }
+}
+
+let NODES;
+try{
+  const saved = storageGet(STORAGE_KEY);
+  NODES = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_NODES));
+}catch(e){
+  NODES = JSON.parse(JSON.stringify(DEFAULT_NODES));
+}
+
+function persist(){
+  storageSet(STORAGE_KEY, JSON.stringify(NODES));
+  const now = new Date();
+  storageSet(LAST_UPDATED_KEY, now.toLocaleString("pt-BR"));
+  renderLastUpdated();
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = "Alterações salvas neste navegador em " + now.toLocaleTimeString("pt-BR");
+  setTimeout(() => { if (ind.textContent.startsWith("Alterações")) ind.textContent=""; }, 4000);
+}
+
+function renderLastUpdated(){
+  const stamp = storageGet(LAST_UPDATED_KEY) || DEFAULT_LAST_UPDATED;
+  document.getElementById("lastUpdated").textContent = "Atualizado em " + stamp;
+}
+
+/* ---------------------------------------------------------
+   TEMA (100% automático, conforme o sistema de quem acessa)
+--------------------------------------------------------- */
+function applyTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+}
+(function initTheme(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(prefersDark ? "dark" : "light");
+})();
+if (window.matchMedia){
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    applyTheme(e.matches ? "dark" : "light");
+  });
+}
+
+/* ---------------------------------------------------------
+   ESTADO DE NAVEGAÇÃO
+--------------------------------------------------------- */
+/* ---------------------------------------------------------
+   MODAL DE CONFIRMAÇÃO PRÓPRIO
+   (substitui confirm()/alert() nativos, que podem ser bloqueados
+   dentro de iframes/embeds como o do Notion)
+--------------------------------------------------------- */
+function showModal(message, opts){
+  opts = opts || {};
+  const showCancel = opts.showCancel !== false;
+  const confirmText = opts.confirmText || "Confirmar";
+  const cancelText = opts.cancelText || "Cancelar";
+  return new Promise((resolve) => {
+    const overlay = document.getElementById("modalOverlay");
+    document.getElementById("modalMessage").textContent = message;
+    const confirmBtn = document.getElementById("modalConfirmBtn");
+    const cancelBtn = document.getElementById("modalCancelBtn");
+    confirmBtn.textContent = confirmText;
+    cancelBtn.textContent = cancelText;
+    cancelBtn.style.display = showCancel ? "inline-block" : "none";
+    overlay.classList.add("open");
+
+    function cleanup(result){
+      overlay.classList.remove("open");
+      confirmBtn.onclick = null;
+      cancelBtn.onclick = null;
+      resolve(result);
+    }
+    confirmBtn.onclick = () => cleanup(true);
+    cancelBtn.onclick = () => cleanup(false);
+  });
+}
+
+let path = [];
+let current = "root";
+let editMode = false;
+
+function friendlyLabel(id){
+  const n = NODES[id];
+  if (!n) return id + " (não encontrado)";
+  return n.type === "leaf" ? ("🏷 " + n.tag) : ("❓ " + n.question.slice(0,40));
+}
+
+function renderAll(){
+  renderBreadcrumb();
+  renderHistory();
+}
+
+function renderBreadcrumb(){
+  const el = document.getElementById("breadcrumb");
+  el.innerHTML = "";
+
+  const startSpan = document.createElement("span");
+  startSpan.className = path.length === 0 ? "current" : "crumb";
+  startSpan.textContent = "Início";
+  if (path.length > 0){
+    startSpan.style.cursor = "pointer";
+    startSpan.onclick = () => { path = []; current = "root"; renderAll(); };
+  }
+  el.appendChild(startSpan);
+
+  path.forEach((step, i) => {
+    const sep = document.createElement("span");
+    sep.className = "sep";
+    sep.textContent = "›";
+    el.appendChild(sep);
+
+    const isLast = i === path.length - 1;
+    const span = document.createElement("span");
+    span.className = isLast ? "current" : "crumb";
+    span.textContent = step.answerLabel;
+    if (!isLast){
+      span.style.cursor = "pointer";
+      span.onclick = () => jumpTo(i);
+    }
+    el.appendChild(span);
+  });
+}
+
+function removeNodeEverywhere(targetId){
+  Object.keys(NODES).forEach(id => {
+    const n = NODES[id];
+    if (n.type === "question"){
+      n.options = n.options.filter(o => o.next !== targetId);
+    }
+  });
+}
+
+function isReferencedAnywhere(targetId){
+  return Object.keys(NODES).some(id => {
+    const n = NODES[id];
+    return n.type === "question" && n.options.some(o => o.next === targetId);
+  });
+}
+
+function jumpTo(stepIndex){
+  if (stepIndex >= path.length - 1) return;
+  const dest = path[stepIndex + 1].nodeId;
+  path = path.slice(0, stepIndex + 1);
+  current = dest;
+  renderAll();
+}
+
+function escapeHtml(s){
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function renderHistory(){
+  const el = document.getElementById("history");
+  el.innerHTML = "";
+
+  path.forEach((step, i) => {
+    const qbox = document.createElement("div");
+    qbox.className = "qbox";
+    qbox.textContent = step.question;
+    el.appendChild(qbox);
+
+    const row = document.createElement("div");
+    row.className = "chip-row";
+    const chip = document.createElement("span");
+    chip.className = "answer-chip";
+    chip.textContent = step.answerLabel;
+    chip.title = "Clique para revisar esta escolha";
+    chip.style.cursor = "pointer";
+    chip.onclick = () => jumpTo(i);
+    row.appendChild(chip);
+    el.appendChild(row);
+  });
+
+  const node = NODES[current];
+  if (!node){
+    el.innerHTML += '<div class="result">Nó não encontrado. Clique em "Recomeçar".</div>';
+    return;
+  }
+
+  if (node.type === "leaf"){
+    const result = document.createElement("div");
+    result.className = "result";
+    let html =
+      '<div class="label">TAG RECOMENDADA</div>' +
+      '<div class="tagname">🏷️ ' + escapeHtml(node.tag) + '</div>' +
+      '<div class="desc">' + escapeHtml(node.desc) + '</div>';
+    if (node.example){
+      html += '<div class="example"><span class="example-label">Frases do cliente:</span> ' + escapeHtml(node.example) + '</div>';
+    }
+    if (node.link){
+      const safeHref = escapeHtml(node.link);
+      html += '<div class="saiba-mais"><a href="' + safeHref + '" target="_blank" rel="noopener noreferrer">🔗 Saiba mais</a></div>';
+    }
+    html += '<div class="note">Use sempre a tag referente à solicitação primária do usuário — este resultado é uma sugestão, não uma regra fixa.</div>';
+    result.innerHTML = html;
+    el.appendChild(result);
+  } else {
+    const qbox = document.createElement("div");
+    qbox.className = "qbox";
+    qbox.textContent = node.question;
+    el.appendChild(qbox);
+
+    const opts = document.createElement("div");
+    opts.className = "options";
+    node.options.forEach(o => {
+      const btn = document.createElement("button");
+      btn.className = "opt-btn";
+      btn.textContent = o.label;
+      btn.onclick = () => goTo(node.question, o.label, o.next);
+      opts.appendChild(btn);
+    });
+    el.appendChild(opts);
+  }
+
+  if (editMode){
+    el.appendChild(buildEditor(current));
+  }
+}
+
+function goTo(question, answerLabel, nextId){
+  path.push({ nodeId: current, question, answerLabel });
+  current = nextId;
+  document.getElementById("search").value = "";
+  document.getElementById("searchResults").innerHTML = "";
+  renderAll();
+}
+function goBack(){
+  if (path.length === 0) return;
+  const last = path.pop();
+  current = last.nodeId;
+  renderAll();
+}
+function restart(){
+  path = [];
+  current = "root";
+  document.getElementById("search").value = "";
+  document.getElementById("searchResults").innerHTML = "";
+  renderAll();
+}
+
+/* ---------------------------------------------------------
+   EDITOR — editar pergunta/opções ou tag/descrição sem código
+--------------------------------------------------------- */
+function buildEditor(nodeId){
+  const node = NODES[nodeId];
+  const box = document.createElement("div");
+  box.className = "editor";
+
+  if (node.type === "leaf"){
+    box.innerHTML = '<h3>Editar esta tag</h3>';
+
+    const fTag = fieldText("Nome da tag", node.tag, "tagInput");
+    const fDesc = fieldTextarea("Descrição", node.desc, "descInput");
+    const fExample = fieldTextarea("Frases do cliente (exemplos reais do que ele diz)", node.example || "", "exampleInput");
+    const fLink = fieldText("Link para saber mais (cole a URL do material)", node.link || "", "linkInput");
+    const fKw = fieldText("Palavras-chave para a busca (separadas por espaço)", node.keywords || "", "kwInput");
+    box.appendChild(fTag);
+    box.appendChild(fDesc);
+    box.appendChild(fExample);
+    box.appendChild(fLink);
+    box.appendChild(fKw);
+
+    const actions = document.createElement("div");
+    actions.className = "editor-actions";
+    actions.innerHTML =
+      '<button class="btn-primary" id="saveLeafBtn">Salvar</button>' +
+      '<button class="btn-secondary" id="cancelEditBtn">Cancelar</button>' +
+      '<button class="btn-danger" id="deleteLeafBtn">Excluir esta tag</button>';
+    box.appendChild(actions);
+
+    box.querySelector("#saveLeafBtn").onclick = () => {
+      node.tag = box.querySelector("#tagInput").value.trim() || node.tag;
+      node.desc = box.querySelector("#descInput").value.trim();
+      node.example = box.querySelector("#exampleInput").value.trim();
+      node.link = box.querySelector("#linkInput").value.trim();
+      node.keywords = box.querySelector("#kwInput").value.trim();
+      persist();
+      renderAll();
+    };
+    box.querySelector("#cancelEditBtn").onclick = () => { editMode = false; toggleEditUi(); renderAll(); };
+    box.querySelector("#deleteLeafBtn").onclick = async () => {
+      const ok = await showModal('Excluir a tag "' + node.tag + '" de vez? Isso também remove a opção que leva até ela.', { confirmText:"Excluir" });
+      if (!ok) return;
+      removeNodeEverywhere(nodeId);
+      delete NODES[nodeId];
+      persist();
+      goBack();
+    };
+
+  } else {
+    box.innerHTML = '<h3>Editar esta pergunta</h3>';
+
+    const fQ = fieldText("Texto da pergunta", node.question, "questionInput");
+    box.appendChild(fQ);
+
+    const optsLabel = document.createElement("label");
+    optsLabel.textContent = "Opções de resposta";
+    optsLabel.style.fontSize = "12px";
+    optsLabel.style.color = "var(--muted)";
+    optsLabel.style.fontWeight = "600";
+    optsLabel.style.display = "block";
+    optsLabel.style.marginBottom = "6px";
+    box.appendChild(optsLabel);
+
+    const optsWrap = document.createElement("div");
+    optsWrap.id = "optsWrap";
+    node.options.forEach((o, idx) => optsWrap.appendChild(buildOptionRow(o, idx)));
+    box.appendChild(optsWrap);
+
+    const addOptBtn = document.createElement("button");
+    addOptBtn.className = "btn-secondary";
+    addOptBtn.textContent = "+ Adicionar opção";
+    addOptBtn.style.marginBottom = "14px";
+    addOptBtn.onclick = () => {
+      const newId = "tag_" + Math.random().toString(36).slice(2,8);
+      NODES[newId] = { type:"leaf", tag:newId, desc:"Descreva quando usar esta tag.", keywords:"", example:"", link:"" };
+      node.options.push({ label:"Nova opção", next:newId });
+      persist();
+      renderAll();
+    };
+    box.appendChild(addOptBtn);
+
+    const hint = document.createElement("div");
+    hint.className = "small-hint";
+    hint.textContent = "Dica: quando a opção leva a uma tag (🏷), o nome e a descrição dela aparecem editáveis logo abaixo, nesta mesma tela. Quando leva a outra pergunta (❓), não há campos extra.";
+    box.appendChild(hint);
+
+    const actions = document.createElement("div");
+    actions.className = "editor-actions";
+    actions.innerHTML =
+      '<button class="btn-primary" id="saveQBtn">Salvar</button>' +
+      '<button class="btn-secondary" id="cancelEditBtn2">Cancelar</button>';
+    box.appendChild(actions);
+
+    box.querySelector("#saveQBtn").onclick = () => {
+      node.question = box.querySelector("#questionInput").value.trim() || node.question;
+      const oldTargets = node.options.map(o => o.next);
+      const rows = optsWrap.querySelectorAll(".opt-row");
+      const newOptions = [];
+      rows.forEach(row => {
+        const label = row.querySelector(".opt-label-input").value.trim();
+        const next = row.querySelector(".opt-next-select").value;
+        if (label) newOptions.push({ label, next });
+
+        const tagInput = row.querySelector(".opt-leaf-tag");
+        const descInput = row.querySelector(".opt-leaf-desc");
+        if (tagInput && descInput && NODES[next] && NODES[next].type === "leaf"){
+          NODES[next].tag = tagInput.value.trim() || NODES[next].tag;
+          NODES[next].desc = descInput.value.trim();
+        }
+      });
+      node.options = newOptions;
+      const newTargets = newOptions.map(o => o.next);
+      const removedTargets = oldTargets.filter(t => !newTargets.includes(t));
+      removedTargets.forEach(id => {
+        if (NODES[id] && NODES[id].type === "leaf" && !isReferencedAnywhere(id)){
+          delete NODES[id];
+        }
+      });
+      persist();
+      renderAll();
+    };
+    box.querySelector("#cancelEditBtn2").onclick = () => { editMode = false; toggleEditUi(); renderAll(); };
+  }
+
+  return box;
+}
+
+function buildOptionRow(option, idx){
+  const row = document.createElement("div");
+  row.className = "opt-row";
+
+  const fields = document.createElement("div");
+  fields.className = "opt-fields";
+
+  const labelInput = document.createElement("input");
+  labelInput.type = "text";
+  labelInput.className = "opt-label-input";
+  labelInput.value = option.label;
+  labelInput.placeholder = "Texto do botão";
+  fields.appendChild(labelInput);
+
+  const select = document.createElement("select");
+  select.className = "opt-next-select";
+  Object.keys(NODES).forEach(id => {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = friendlyLabel(id);
+    if (id === option.next) opt.selected = true;
+    select.appendChild(opt);
+  });
+  fields.appendChild(select);
+
+  const leafFields = document.createElement("div");
+  leafFields.className = "opt-leaf-fields";
+  fields.appendChild(leafFields);
+
+  function renderLeafFields(leafId){
+    leafFields.innerHTML = "";
+    const n = NODES[leafId];
+    if (!n || n.type !== "leaf") return;
+
+    const tagLabel = document.createElement("label");
+    tagLabel.textContent = "Nome da tag";
+    tagLabel.className = "opt-leaf-label";
+    const tagInput = document.createElement("input");
+    tagInput.type = "text";
+    tagInput.className = "opt-leaf-tag";
+    tagInput.value = n.tag;
+    tagInput.placeholder = "nome_da_tag";
+
+    const descLabel = document.createElement("label");
+    descLabel.textContent = "Descrição / quando usar";
+    descLabel.className = "opt-leaf-label";
+    const descInput = document.createElement("textarea");
+    descInput.className = "opt-leaf-desc";
+    descInput.value = n.desc;
+    descInput.rows = 2;
+
+    leafFields.appendChild(tagLabel);
+    leafFields.appendChild(tagInput);
+    leafFields.appendChild(descLabel);
+    leafFields.appendChild(descInput);
+  }
+  renderLeafFields(option.next);
+  select.addEventListener("change", () => renderLeafFields(select.value));
+
+  row.appendChild(fields);
+
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "remove-opt";
+  removeBtn.textContent = "Excluir";
+  removeBtn.onclick = () => { row.remove(); };
+  row.appendChild(removeBtn);
+
+  return row;
+}
+
+function fieldText(labelText, value, id){
+  const wrap = document.createElement("div");
+  wrap.className = "field";
+  wrap.innerHTML = '<label>' + escapeHtml(labelText) + '</label>';
+  const input = document.createElement("input");
+  input.type = "text";
+  input.id = id;
+  input.value = value;
+  wrap.appendChild(input);
+  return wrap;
+}
+function fieldTextarea(labelText, value, id){
+  const wrap = document.createElement("div");
+  wrap.className = "field";
+  wrap.innerHTML = '<label>' + escapeHtml(labelText) + '</label>';
+  const ta = document.createElement("textarea");
+  ta.id = id;
+  ta.value = value;
+  wrap.appendChild(ta);
+  return wrap;
+}
+
+function toggleEditUi(){
+  const btn = document.getElementById("editModeBtn");
+  btn.classList.toggle("active", editMode);
+  btn.title = editMode ? "Sair do modo de edição" : "Modo de edição";
+  document.getElementById("dataIo").style.display = editMode ? "flex" : "none";
+}
+
+document.getElementById("editModeBtn").addEventListener("click", () => {
+  editMode = !editMode;
+  toggleEditUi();
+  renderAll();
+});
+
+/* ---------------------------------------------------------
+   EXPORTAR / IMPORTAR / RESTAURAR
+--------------------------------------------------------- */
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(NODES, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "dtree-tags-dados.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("importBtn").addEventListener("click", () => {
+  document.getElementById("importFile").click();
+});
+document.getElementById("importFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try{
+      const parsed = JSON.parse(ev.target.result);
+      NODES = parsed;
+      persist();
+      restart();
+    }catch(err){
+      await showModal("Não foi possível ler este arquivo. Verifique se é um JSON exportado por esta ferramenta.", { showCancel:false, confirmText:"OK" });
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+});
+
+document.getElementById("resetBtn").addEventListener("click", async () => {
+  const ok = await showModal("Isso vai apagar suas edições e voltar à versão original. Continuar?", { confirmText:"Restaurar" });
+  if (!ok) return;
+  NODES = JSON.parse(JSON.stringify(DEFAULT_NODES));
+  persist();
+  restart();
+});
+
+/* ---------------------------------------------------------
+   BUSCA POR PALAVRA-CHAVE
+--------------------------------------------------------- */
+function normalize(s){
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+document.getElementById("search").addEventListener("input", (e) => {
+  const q = normalize(e.target.value.trim());
+  const box = document.getElementById("searchResults");
+  if (q.length < 2){ box.innerHTML = ""; return; }
+
+  const leafIds = Object.keys(NODES).filter(id => NODES[id].type === "leaf");
+  const matches = leafIds.filter(id => {
+    const n = NODES[id];
+    const hay = normalize(n.tag + " " + n.desc + " " + (n.keywords || ""));
+    return hay.includes(q);
+  }).slice(0, 8);
+
+  box.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "search-results";
+
+  if (matches.length === 0){
+    wrap.innerHTML = '<div class="sr-item"><span class="sr-desc">Nenhuma tag encontrada — tente outra palavra-chave.</span></div>';
+  } else {
+    matches.forEach(id => {
+      const n = NODES[id];
+      const item = document.createElement("div");
+      item.className = "sr-item";
+      item.innerHTML = '<span class="sr-tag">' + escapeHtml(n.tag) + '</span><span class="sr-desc">' + escapeHtml(n.desc) + '</span>';
+      item.onclick = () => {
+        path = [];
+        current = id;
+        document.getElementById("search").value = "";
+        box.innerHTML = "";
+        renderAll();
+      };
+      wrap.appendChild(item);
+    });
+  }
+  box.appendChild(wrap);
+});
+
+document.getElementById("backBtn").addEventListener("click", goBack);
+document.getElementById("restartBtn").addEventListener("click", restart);
+
+renderLastUpdated();
+renderAll();
+</script>
+</body>
+</html>
