@@ -5,5 +5,11 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS"
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "TAGS_KV",
+      "id": "1ad236444c3b41cca469dce4211bf739"
+    }
+  ]
 }
