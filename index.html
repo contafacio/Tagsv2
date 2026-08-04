@@ -405,7 +405,7 @@ const DEFAULT_NODES = {
   CT_reprovado_modelo:   { type:"leaf", tag:"reprovado_modelo_CT",   desc:"Reprovação Crédito do Trabalhador. Quando o cliente já souber que foi reprovado por modelo ou sem elegibilidade para a contratação do produto.", keywords:"reprovado elegibilidade consignado", example:"\"Por que fui negado?\" / \"Vi que não foi aprovado, por quê?\"", link:"" },
 
   /* Como a Facio recebe dinheiro do cliente */
-  cobranca_info:         { type:"leaf", tag:"cobrança_info",         desc:"Informações de cobrança por nossos meios de pagamento. Quando o cliente questionar valores cobrados parcial ou integralmente.", keywords:"cobrança valor pagamento", example:"", link:"" },
+  cobranca_info:         { type:"leaf", tag:"cobrança_info",         desc:"Informações de cobrança por nossos meios de pagamento. Quando o cliente questionar valores cobrados parcial ou integralmente.", keywords:"cobrança valor pagamento pix inteligente", example:"", link:"" },
   cobranca_excecao:      { type:"leaf", tag:"cobrança_excecao",      desc:"Cobrança com exceção para devolução de valores. Utilizar quando o cliente teve uma cobrança realizada e, após análise do caso, será aberta uma exceção para devolução do valor devido a um cenário sensível, erro operacional ou situação fora do padrão.", keywords:"exceção devolução erro operacional", example:"", link:"" },
   arrependimento_7d:     { type:"leaf", tag:"arrependimento_7d",     desc:"Cancelamento em até 7 dias. Quando o cliente solicitar devolução dentro do prazo legal.", keywords:"7 dias arrependimento prazo legal devolução", example:"", link:"" },
   arrependimento_depois_7d: { type:"leaf", tag:"arrependimento_depois_7d", desc:"Arrependimento após 7 dias. Quando o cliente solicita devolução após o prazo legal pelo App do banco e deseja a baixa da pendência no App da Facio.", keywords:"depois 7 dias baixa pendência", example:"", link:"" },
@@ -440,45 +440,62 @@ const DEFAULT_NODES = {
 };
 
 /* ---------------------------------------------------------
-   ARMAZENAMENTO (com fallback seguro se localStorage falhar)
+   ARMAZENAMENTO COMPARTILHADO
+   Antes, cada navegador guardava sua própria cópia (localStorage).
+   Agora, todo mundo lê e escreve no mesmo lugar, através da API
+   em /api/tags (Cloudflare Pages Function + KV). Assim, uma edição
+   feita por qualquer pessoa aparece pra todo mundo, sem precisar
+   editar o arquivo/código.
 --------------------------------------------------------- */
-const STORAGE_KEY = "dtree_tags_nodes_v1";
-const LAST_UPDATED_KEY = "dtree_tags_last_updated";
-/* Se editar este arquivo direto no código (fora do Modo de edição),
-   atualize a linha abaixo manualmente para refletir a data da alteração. */
+const API_URL = "/api/tags";
+/* Usado só se a API ainda não estiver configurada (ex: antes de
+   criar o KV no Cloudflare) ou se a conexão falhar no primeiro acesso. */
 const DEFAULT_LAST_UPDATED = "06/07/2026";
-let memoryStore = {};
 
-function storageGet(key){
-  try { const v = localStorage.getItem(key); return v; }
-  catch(e){ return memoryStore[key] || null; }
-}
-function storageSet(key, value){
-  try { localStorage.setItem(key, value); }
-  catch(e){ memoryStore[key] = value; }
+let NODES = JSON.parse(JSON.stringify(DEFAULT_NODES));
+let lastUpdatedStamp = null;
+let apiAvailable = true;
+
+async function loadSharedData(){
+  try {
+    const res = await fetch(API_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("status " + res.status);
+    const data = await res.json();
+    if (data && data.nodes){
+      NODES = data.nodes;
+      lastUpdatedStamp = data.lastUpdated || null;
+    }
+    apiAvailable = true;
+  } catch (err){
+    apiAvailable = false;
+    console.warn("Não foi possível carregar os dados compartilhados — usando a versão padrão do arquivo.", err);
+  }
 }
 
-let NODES;
-try{
-  const saved = storageGet(STORAGE_KEY);
-  NODES = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_NODES));
-}catch(e){
-  NODES = JSON.parse(JSON.stringify(DEFAULT_NODES));
-}
-
-function persist(){
-  storageSet(STORAGE_KEY, JSON.stringify(NODES));
+async function persist(){
   const now = new Date();
-  storageSet(LAST_UPDATED_KEY, now.toLocaleString("pt-BR"));
+  lastUpdatedStamp = now.toLocaleString("pt-BR");
   renderLastUpdated();
   const ind = document.getElementById("saveIndicator");
-  ind.textContent = "Alterações salvas neste navegador em " + now.toLocaleTimeString("pt-BR");
-  setTimeout(() => { if (ind.textContent.startsWith("Alterações")) ind.textContent=""; }, 4000);
+  ind.textContent = "Salvando para todo mundo...";
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ nodes: NODES, lastUpdated: lastUpdatedStamp })
+    });
+    if (!res.ok) throw new Error("status " + res.status);
+    apiAvailable = true;
+    ind.textContent = "Salvo para todo mundo às " + now.toLocaleTimeString("pt-BR");
+  } catch (err){
+    apiAvailable = false;
+    ind.textContent = "⚠️ Não foi possível salvar para todo mundo agora (sem conexão com a API). A alteração pode não ter sido publicada.";
+  }
+  setTimeout(() => { if (ind.textContent.startsWith("Salvo")) ind.textContent=""; }, 5000);
 }
 
 function renderLastUpdated(){
-  const stamp = storageGet(LAST_UPDATED_KEY) || DEFAULT_LAST_UPDATED;
-  document.getElementById("lastUpdated").textContent = "Atualizado em " + stamp;
+  document.getElementById("lastUpdated").textContent = "Atualizado em " + (lastUpdatedStamp || DEFAULT_LAST_UPDATED);
 }
 
 /* ---------------------------------------------------------
@@ -1019,8 +1036,16 @@ document.getElementById("search").addEventListener("input", (e) => {
 document.getElementById("backBtn").addEventListener("click", goBack);
 document.getElementById("restartBtn").addEventListener("click", restart);
 
-renderLastUpdated();
-renderAll();
+document.getElementById("history").innerHTML = '<div class="qbox">Carregando…</div>';
+(async function init(){
+  await loadSharedData();
+  renderLastUpdated();
+  renderAll();
+  if (!apiAvailable){
+    const ind = document.getElementById("saveIndicator");
+    ind.textContent = "⚠️ Não foi possível conectar à base compartilhada — mostrando a versão padrão do arquivo.";
+  }
+})();
 </script>
 </body>
 </html>
